@@ -113,7 +113,6 @@ void setup() {
   // put your setup code here, to run once:
   g_pMyPinTimer1 = new MyPinTimer(MY_PIN, 500, 5);
   g_pMyPinTimer2 = new MyPinTimer(MY_PIN, 2000, 5);
-  //DEBUG_PRINT(  __FILE__,__LINE__,"setup end");
   printf("%s:%d setup end\n", __FILE__, __LINE__);
 }
 
