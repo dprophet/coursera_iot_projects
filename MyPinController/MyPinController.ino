@@ -26,9 +26,9 @@
  */
 
 // Comment out the below line to stop debugging transmit across the serial port
-//#define DEBUG 1
+#define DEBUG 1
 
-// implement a real vararg printf for ardbino. Its dumb they never provided one
+// implement a real vararg printf for debugging across tge ardbino serial port. Its dumb they never provided one.
 #define printf(...) myserialprintf(__VA_ARGS__)
 
 #ifdef DEBUG
@@ -39,6 +39,7 @@
    { 
        if(c == '\n')
          Serial.write('\r'); 
+ 
      Serial.write(c); 
    }
   }
@@ -110,14 +111,12 @@ void setup() {
   pinMode(MY_PIN, OUTPUT);
 
   printf("%s:%d setup begining\n", __FILE__, __LINE__);
-  // put your setup code here, to run once:
   g_pMyPinTimer1 = new MyPinTimer(MY_PIN, 500, 5);
   g_pMyPinTimer2 = new MyPinTimer(MY_PIN, 2000, 5);
   printf("%s:%d setup end\n", __FILE__, __LINE__);
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
   g_pMyPinTimer1->run();
   g_pMyPinTimer2->run();
 }
