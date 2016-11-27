@@ -1,4 +1,9 @@
 //Erik Work
+// Working example based off
+//   - https://github.com/ArduCAM/Arduino/blob/master/ArduCAM/examples/mini/ArduCAM_Mini_Capture2SD/ArduCAM_Mini_Capture2SD.ino
+
+// Comment out the below line to stop debugging transmit across the serial port
+#include "arduinoprintf.h"
 
 // ArduCAM demo (C)2016 Lee
 // web: http://www.ArduCAM.com
@@ -25,69 +30,32 @@
   #error Please select the hardware platform and camera module in the ../libraries/ArduCAM/memorysaver.h file
 #endif
 #define SD_CS 9
-const int SPI_CS = 9;
-#if defined (OV2640_MINI_2MP)
-ArduCAM myCAM( OV2640, SPI_CS );
-#else
-ArduCAM myCAM( OV5642, SPI_CS );
-#endif
+const int SPI_CS = 10;
+ArduCAM *myCAM;
 
+// Store the original root error for failure. We will print this over and over.
+char cError[100]={0};
 
-// Comment out the below line to stop debugging transmit across the serial port
-#define DEBUG 1
-
-// implement a real vararg printf for debugging across tge ardbino serial port. Its dumb they never provided one.
-#define printf(...) myserialprintf(__VA_ARGS__)
-
-#ifdef DEBUG
- #define myserialprintf(myformat, ...) _myserialprintf(PSTR(myformat), ##__VA_ARGS__)
-
-  extern "C" {
-   int serial_put_c(char c, FILE *fp)
-   { 
-       if(c == '\n')
-         Serial.write('\r'); 
- 
-     Serial.write(c); 
-   }
-  }
-  
-  void _myserialprintf(const char *myformat, ...)
-  {
-#ifdef DEBUG
-  FILE stdif;
-  va_list ap;
-  
-   fdev_setup_stream(&stdif, serial_put_c, NULL, _FDEV_SETUP_WRITE);
-  
-   va_start(ap, myformat);
-   vfprintf_P(&stdif, myformat, ap);
-   va_end(ap);
-#endif
-  }
- 
-#else
-  // Do notning since debug wasnt defined
-  #define myserialprintf(fmt, ...)
-#endif
-
-char cError[100];
+// Location is overlay because I did expanded the YUM dick space with an SD overlay
+//  - root@linino:~# overlay-only -i
+//  - http://www.arduino.org/forums/linino-and-openwrt/expand-the-yun-disk-space-598
+#define _CAMERA_ROOT_ "/overlay/DCIM/"
 
 void myCAMSaveToSDFile(){
-  String sFile("/overlay/camera/");
+  String sFile(_CAMERA_ROOT_);
   char str[8];
   byte buf[256];
   static int i = 0;
   static int k = 0;
   uint8_t temp = 0,temp_last=0;
   //Flush the FIFO
-  myCAM.flush_fifo();
+  myCAM->flush_fifo();
   //Clear the capture done flag
-  myCAM.clear_fifo_flag();
+  myCAM->clear_fifo_flag();
   //Start capture
-  myCAM.start_capture();
-  printf("%s:%d start Capture\n", __FILE__, __LINE__);
-  while(!myCAM.get_bit(ARDUCHIP_TRIG , CAP_DONE_MASK));
+  myCAM->start_capture();
+  printf("%s:%d start Capture infinite while loop\n", __FILE__, __LINE__);
+  while(!myCAM->get_bit(ARDUCHIP_TRIG , CAP_DONE_MASK));
 
   printf("%s:%d Capture Done!\n", __FILE__, __LINE__); 
 
@@ -110,8 +78,8 @@ void myCAMSaveToSDFile(){
   }
  
   i = 0;
-  myCAM.CS_LOW();
-  myCAM.set_fifo_burst();
+  myCAM->CS_LOW();
+  myCAM->set_fifo_burst();
   temp=SPI.transfer(0x00);
   //Read JPEG data from FIFO
   while ( (temp !=0xD9) | (temp_last !=0xFF)){
@@ -122,19 +90,19 @@ void myCAMSaveToSDFile(){
        buf[i++] = temp;
     } else {
        //Write 256 bytes image data to file
-       myCAM.CS_HIGH();
+       myCAM->CS_HIGH();
        file.write(buf ,256);
        i = 0;
        buf[i++] = temp;
-       myCAM.CS_LOW();
-       myCAM.set_fifo_burst();
+       myCAM->CS_LOW();
+       myCAM->set_fifo_burst();
     }
     delay(0);  
  }
  
  //Write the remain bytes in the buffer
  if(i > 0){
-  myCAM.CS_HIGH();
+  myCAM->CS_HIGH();
   file.write(buf,i);
  }
  //Close the file
@@ -145,8 +113,15 @@ void myCAMSaveToSDFile(){
 void setup(){
   uint8_t vid, pid;
   uint8_t temp = 0;
-  memset(cError,0,sizeof(cError));
+  Serial.begin(115200);
+  printf("%s:%d Serial.begin\n", __FILE__, __LINE__); 
   delay(5000);
+  
+#if defined (OV2640_MINI_2MP)
+  myCAM = new ArduCAM( OV2640, SPI_CS );
+#else
+  myCAM = new ArduCAM( OV5642, SPI_CS );
+#endif  
   
   if (!FileSystem.begin()) {
     sprintf(cError, "%s:%d FileSystem.begin Failed !", __FILE__, __LINE__);
@@ -155,7 +130,6 @@ void setup(){
   }
 
   Wire.begin();
-  Serial.begin(9600);
   printf("%s:%d ArduCAM Start!!\n", __FILE__, __LINE__); 
 
   //set the CS as an output:
@@ -166,9 +140,9 @@ void setup(){
   SPI.begin();
   delay(5000);
   //Check if the ArduCAM SPI bus is OK
-  myCAM.write_reg(ARDUCHIP_TEST1, 0x55);
+  myCAM->write_reg(ARDUCHIP_TEST1, 0x55);
   delay(1000);
-  temp = myCAM.read_reg(ARDUCHIP_TEST1);
+  temp = myCAM->read_reg(ARDUCHIP_TEST1);
    
   if (temp != 0x55){
     sprintf(cError, "%s:%d SPI1 interface Error!. temp=%d (0x%02x)\n", __FILE__, __LINE__, temp, temp); 
@@ -179,9 +153,9 @@ void setup(){
    
  #if defined (OV2640_MINI_2MP)
      //Check if the camera module type is OV2640
-     myCAM.wrSensorReg8_8(0xff, 0x01);  
-     myCAM.rdSensorReg8_8(OV2640_CHIPID_HIGH, &vid);
-     myCAM.rdSensorReg8_8(OV2640_CHIPID_LOW, &pid);
+     myCAM->wrSensorReg8_8(0xff, 0x01);  
+     myCAM->rdSensorReg8_8(OV2640_CHIPID_HIGH, &vid);
+     myCAM->rdSensorReg8_8(OV2640_CHIPID_LOW, &pid);
      if ((vid != 0x26) || (pid != 0x42)) {
        sprintf(cError, "%s:%d Can't find OV2640 module!\n", __FILE__, __LINE__);
        printf("%s", cError);
@@ -191,9 +165,9 @@ void setup(){
      }
   #else
    //Check if the camera module type is OV5642
-    myCAM.wrSensorReg16_8(0xff, 0x01);
-    myCAM.rdSensorReg16_8(OV5642_CHIPID_HIGH, &vid);
-    myCAM.rdSensorReg16_8(OV5642_CHIPID_LOW, &pid);
+    myCAM->wrSensorReg16_8(0xff, 0x01);
+    myCAM->rdSensorReg16_8(OV5642_CHIPID_HIGH, &vid);
+    myCAM->rdSensorReg16_8(OV5642_CHIPID_LOW, &pid);
      if((vid != 0x56) || (pid != 0x42)) {
        sprintf(cError, "%s:%d Can't find OV5642 module!\n", __FILE__, __LINE__);
        printf("%s", cError);
@@ -202,19 +176,19 @@ void setup(){
        printf("%s:%d OV5642 detected.\n", __FILE__, __LINE__);
      }
   #endif
-   myCAM.set_format(JPEG);
-   myCAM.InitCAM();
+   myCAM->set_format(JPEG);
+   myCAM->InitCAM();
  #if defined (OV2640_MINI_2MP)
-   myCAM.OV2640_set_JPEG_size(OV2640_320x240);
+   myCAM->OV2640_set_JPEG_size(OV2640_320x240);
   #else
-   myCAM.write_reg(ARDUCHIP_TIM, VSYNC_LEVEL_MASK);   //VSYNC is active HIGH
-   myCAM.OV5642_set_JPEG_size(OV5642_320x240);
+   myCAM->write_reg(ARDUCHIP_TIM, VSYNC_LEVEL_MASK);   //VSYNC is active HIGH
+   myCAM->OV5642_set_JPEG_size(OV5642_320x240);
  #endif
   delay(1000);
 }
 
 void loop(){
-  if ( cError[0] == '\0' ) {
+  if ( cError[0] != '\0' ) {
     myCAMSaveToSDFile();
   } else {
     printf("%s:%d No capture. Previous error was\n\t%s\n", __FILE__, __LINE__, cError);
