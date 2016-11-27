@@ -17,7 +17,7 @@
 #include <ArduCAM.h>
 #include <Wire.h>
 #include <SPI.h>
-#include <SD.h>
+#include <FileIO.h>
 #include "memorysaver.h"
 //This demo can only work on OV2640_MINI_2MP or OV5642_MINI_5MP or OV5642_MINI_5MP_BIT_ROTATION_FIXED
 //or OV5640_MINI_5MP_PLUS or ARDUCAM_SHIELD_V2 platform.
@@ -25,7 +25,7 @@
   #error Please select the hardware platform and camera module in the ../libraries/ArduCAM/memorysaver.h file
 #endif
 #define SD_CS 9
-const int SPI_CS = 7;
+const int SPI_CS = 9;
 #if defined (OV2640_MINI_2MP)
 ArduCAM myCAM( OV2640, SPI_CS );
 #else
@@ -71,6 +71,7 @@ ArduCAM myCAM( OV5642, SPI_CS );
   #define myserialprintf(fmt, ...)
 #endif
 
+char cError[100];
 
 void myCAMSaveToSDFile(){
   String sFile("/overlay/camera/");
@@ -79,7 +80,6 @@ void myCAMSaveToSDFile(){
   static int i = 0;
   static int k = 0;
   uint8_t temp = 0,temp_last=0;
-  File file;
   //Flush the FIFO
   myCAM.flush_fifo();
   //Clear the capture done flag
@@ -87,44 +87,49 @@ void myCAMSaveToSDFile(){
   //Start capture
   myCAM.start_capture();
   printf("%s:%d start Capture\n", __FILE__, __LINE__);
- while(!myCAM.get_bit(ARDUCHIP_TRIG , CAP_DONE_MASK));
+  while(!myCAM.get_bit(ARDUCHIP_TRIG , CAP_DONE_MASK));
 
- printf("%s:%d Capture Done!\n", __FILE__, __LINE__); 
+  printf("%s:%d Capture Done!\n", __FILE__, __LINE__); 
 
- //Construct a file name
- k = k + 1;
- itoa(k, str, 10);
- strcat(str, ".jpg");
- sFile.concat(str);
+  //Construct a file name
+  k = k + 1;
+  itoa(k, str, 10);
+  strcat(str, ".jpg");
+  sFile.concat(str);
  
- //Open the new file
- printf("%s:%d Trying to open file=%s\n", __FILE__, __LINE__, sFile.c_str());
- file = SD.open(sFile.c_str(), O_WRITE | O_CREAT | O_TRUNC);
- if(! file){
-  printf("%s:%d open file faild. Filename: %s\n", __FILE__, __LINE__, sFile.c_str()); 
-  return;
- }
- i = 0;
- myCAM.CS_LOW();
- myCAM.set_fifo_burst();
- temp=SPI.transfer(0x00);
- //Read JPEG data from FIFO
- while ( (temp !=0xD9) | (temp_last !=0xFF)){
-  temp_last = temp;
-  temp = SPI.transfer(0x00);
-  //Write image data to buffer if not full
-  if( i < 256)
-   buf[i++] = temp;
-   else{
-    //Write 256 bytes image data to file
-    myCAM.CS_HIGH();
-    file.write(buf ,256);
-    i = 0;
-    buf[i++] = temp;
-    myCAM.CS_LOW();
-    myCAM.set_fifo_burst();
-   }
-   delay(0);  
+  //Open the new file
+  printf("%s:%d Trying to open file=%s\n", __FILE__, __LINE__, sFile.c_str());
+ 
+  File file = FileSystem.open(sFile.c_str(), FILE_WRITE);
+ 
+  if( !file ){
+   printf("%s:%d open file failed. Filename: %s\n", __FILE__, __LINE__, sFile.c_str()); 
+   return;
+  } else {
+    printf("%s:%d File open success\n", __FILE__, __LINE__); 
+  }
+ 
+  i = 0;
+  myCAM.CS_LOW();
+  myCAM.set_fifo_burst();
+  temp=SPI.transfer(0x00);
+  //Read JPEG data from FIFO
+  while ( (temp !=0xD9) | (temp_last !=0xFF)){
+    temp_last = temp;
+    temp = SPI.transfer(0x00);
+    //Write image data to buffer if not full
+    if( i < 256) {
+       buf[i++] = temp;
+    } else {
+       //Write 256 bytes image data to file
+       myCAM.CS_HIGH();
+       file.write(buf ,256);
+       i = 0;
+       buf[i++] = temp;
+       myCAM.CS_LOW();
+       myCAM.set_fifo_burst();
+    }
+    delay(0);  
  }
  
  //Write the remain bytes in the buffer
@@ -139,33 +144,37 @@ void myCAMSaveToSDFile(){
 
 void setup(){
   uint8_t vid, pid;
-  uint8_t temp;
+  uint8_t temp = 0;
+  memset(cError,0,sizeof(cError));
   delay(5000);
+  
+  if (!FileSystem.begin()) {
+    sprintf(cError, "%s:%d FileSystem.begin Failed !", __FILE__, __LINE__);
+    printf("%s", cError);
+    return;
+  }
 
   Wire.begin();
-  Serial.begin(115200);
+  Serial.begin(9600);
   printf("%s:%d ArduCAM Start!!\n", __FILE__, __LINE__); 
 
   //set the CS as an output:
   pinMode(SPI_CS,OUTPUT);
 
+  printf("%s:%d Starting SPI test temp=%d (0x%02x). ARDUCHIP_TEST1=%d\n", __FILE__, __LINE__, temp, temp, ARDUCHIP_TEST1); 
   // initialize SPI:
   SPI.begin();
-  delay(1000);
+  delay(5000);
   //Check if the ArduCAM SPI bus is OK
   myCAM.write_reg(ARDUCHIP_TEST1, 0x55);
+  delay(1000);
   temp = myCAM.read_reg(ARDUCHIP_TEST1);
    
   if (temp != 0x55){
-    printf("%s:%d SPI1 interface Error!. temp=%d\n", __FILE__, __LINE__, temp); 
+    sprintf(cError, "%s:%d SPI1 interface Error!. temp=%d (0x%02x)\n", __FILE__, __LINE__, temp, temp); 
+    printf("%s", cError);
+    return;
     //while(1);
-  }
-    //Initialize SD Card
-  if(!SD.begin(SD_CS)){
-    printf("%s:%d SD Card Error\n", __FILE__, __LINE__); 
-  }
-  else {
-    printf("%s:%d SD Card detected!\n", __FILE__, __LINE__);
   }
    
  #if defined (OV2640_MINI_2MP)
@@ -174,7 +183,9 @@ void setup(){
      myCAM.rdSensorReg8_8(OV2640_CHIPID_HIGH, &vid);
      myCAM.rdSensorReg8_8(OV2640_CHIPID_LOW, &pid);
      if ((vid != 0x26) || (pid != 0x42)) {
-       printf("%s:%d Can't find OV2640 module!\n", __FILE__, __LINE__);
+       sprintf(cError, "%s:%d Can't find OV2640 module!\n", __FILE__, __LINE__);
+       printf("%s", cError);
+       return;
      } else {
        printf("%s:%d OV2640 detected.\n", __FILE__, __LINE__);
      }
@@ -184,7 +195,9 @@ void setup(){
     myCAM.rdSensorReg16_8(OV5642_CHIPID_HIGH, &vid);
     myCAM.rdSensorReg16_8(OV5642_CHIPID_LOW, &pid);
      if((vid != 0x56) || (pid != 0x42)) {
-       printf("%s:%d Can't find OV5642 module!\n", __FILE__, __LINE__);
+       sprintf(cError, "%s:%d Can't find OV5642 module!\n", __FILE__, __LINE__);
+       printf("%s", cError);
+       return;
      } else {
        printf("%s:%d OV5642 detected.\n", __FILE__, __LINE__);
      }
@@ -201,11 +214,11 @@ void setup(){
 }
 
 void loop(){
-  myCAMSaveToSDFile();
-  printf("%s:%d Sleeping 5000\n", __FILE__, __LINE__);
+  if ( cError[0] == '\0' ) {
+    myCAMSaveToSDFile();
+  } else {
+    printf("%s:%d No capture. Previous error was\n\t%s\n", __FILE__, __LINE__, cError);
+  }
   delay(5000);
-   
-  
-  
 }
 
