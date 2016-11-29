@@ -30,7 +30,7 @@
   #error Please select the hardware platform and camera module in the ../libraries/ArduCAM/memorysaver.h file
 #endif
 #define SD_CS 9
-const int SPI_CS = 10;
+const int SPI_CS = 9;
 ArduCAM *myCAM;
 
 // Store the original root error for failure. We will print this over and over.
@@ -41,7 +41,7 @@ char cError[100]={0};
 //  - http://www.arduino.org/forums/linino-and-openwrt/expand-the-yun-disk-space-598
 #define _CAMERA_ROOT_ "/overlay/DCIM/"
 
-void myCAMSaveToSDFile(){
+void myCAMSaveToSDFile() {
   String sFile(_CAMERA_ROOT_);
   char str[8];
   byte buf[256];
