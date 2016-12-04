@@ -31,3 +31,4 @@ except Exception as ex:
     print "Exception = ", ex, " Tracekack:", traceback.format_exc()
     sys.exit(1)
 
+GPIO.cleanup()
