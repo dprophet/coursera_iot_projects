@@ -22,6 +22,7 @@
 #include <Wire.h>
 #include <ArduCAM.h>
 #include <SPI.h>
+
 #include "memorysaver.h"
 #if !(defined ESP8266 )
 #error Please select the ArduCAM ESP8266 UNO board in the Tools/Board
@@ -36,7 +37,7 @@ const int CS = 16;
 
 
 // Motion sensor datasheet https://www.mpja.com/download/31227sc.pdf
-const int MOTION_PIN = D4;
+const int MOTION_PIN = D4;  // Defined in pins_arduino.h
 #define _USE_MOTION_ 1   // Change to a 0 if you dont want to use a motion sensor
 
 //you can change the value of wifiType to select Station or AP mode.
