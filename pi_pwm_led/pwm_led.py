@@ -20,6 +20,12 @@ try:
         pwm.ChangeDutyCycle(i)
         time.sleep(1)
 
+    for i in range(10, 0, -1):
+        print "Duty ", i
+        pwm.ChangeDutyCycle(i)
+        time.sleep(1)
+
+
 
 except Exception as ex:
     print "Exception = ", ex, " Tracekack:", traceback.format_exc()
