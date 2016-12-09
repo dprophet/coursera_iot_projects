@@ -2,9 +2,23 @@ import RPi.GPIO as GPIO
 import time
 import traceback
 import sys
+import signal
 
 my_pin = 12   #GPIO 10
 
+def signal_handler(signal,frame):
+	print("\nProgram exiting gracefully.")
+	
+	pwm.stop()
+	print("Stopped the PWM output")
+	
+	GPIO.cleanup()
+	print("GPIO cleaned up.")
+	
+	sys.exit(0)
+
+signal.signal(signal.SIGINT, signal_handler)
+print("\nPress ctrl-c to terminate program.")
 
 try:
 
