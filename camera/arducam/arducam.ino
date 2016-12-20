@@ -57,7 +57,7 @@ int iCaptureSize = OV2640_1024x768;
 const int SPI_CS = 7;
 ArduCAM *myCAM;
 
-const unsigned int nTimeDelay = 60000;
+const unsigned long nTimeDelay = 60000000;
 unsigned long nLastRequest = 0;      // when you last made a request
 
 #ifndef _DR_WATSON_INCLUDES_
@@ -172,7 +172,7 @@ void setup(){
   Serial.print("Beginning");
   printf("%s:%d Serial.begin\n", __FILE__, __LINE__); 
   delay(5000);
-   printf("%s:%d byte size=%d, char size=%d, int size=%d\n", __FILE__, __LINE__, sizeof(byte), sizeof(char), sizeof(int)); 
+  printf("%s:%d byte size=%d, char size=%d, int size=%d, long size=%d\n", __FILE__, __LINE__, sizeof(byte), sizeof(char), sizeof(int), sizeof(long)); 
   
 #if defined (OV2640_MINI_2MP)
   myCAM = new ArduCAM( OV2640, SPI_CS );
@@ -265,6 +265,7 @@ void loop(){
   } else {
     printf("%s:%d No capture. Previous error was\n\t%s\n", __FILE__, __LINE__, cError);
   }
+  printf("%s:%d Delay = %ld\n", __FILE__, __LINE__, nTimeDelay);
   delay(nTimeDelay);
 }
 
@@ -279,20 +280,19 @@ int sentImage(const String &sImage) {
   Process drWatson;
   String sParam;
   printf("%s:%d Sending image %s to cloud\n", __FILE__, __LINE__, sImage.c_str());
-  drWatson.begin("curl");
-  drWatson.addParameter("-XPUT");
-  drWatson.addParameter("-H");
-  sParam = "X-Auth-Token: ";
+
+  sParam = "curl -v --insecure -XPUT -H 'X-Auth-Token: ";
   sParam += _AUTHORIZATION_TOKEN_;
-  drWatson.addParameter(sParam);
-  drWatson.addParameter("--data-binary");
-  sParam = "@";
+  sParam += "' --data-binary '@";
   sParam += sImage;
-  drWatson.addParameter(sParam);
-  sParam = _DRWATSON_ACCOUNT_URL;
-  sParam += "1.jpg";
-  drWatson.addParameter(sParam);
-  drWatson.run();
+  sParam += "' '";
+  sParam += _DRWATSON_ACCOUNT_URL;
+  //sParam += "1.jpg' 2>&1";
+  sParam += "1.jpg' 2>&1 | tee /tmp/log/curl.txt";
+  printf("%s:%d running shell command=\n%s\n", __FILE__, __LINE__, sParam.c_str());
+  drWatson.runShellCommand(sParam);
+  int iReturn = drWatson.exitValue();
+  printf("%s:%d drwatson iReturn=%d=\n", __FILE__, __LINE__, iReturn);
 
 #ifdef _DEBUG_
   delay(2000);
@@ -307,7 +307,7 @@ int sentImage(const String &sImage) {
   printf("%s:%d iInitAvail=%d. Results of curl call=\n\t%s\n", __FILE__, __LINE__, iInitAvail, sParam.c_str());
 #endif
 
-  int iReturn = drWatson.exitValue();
+  iReturn = drWatson.exitValue();
   printf("%s:%d drWatson.exitValue()=%d\n", __FILE__, __LINE__, iReturn);
 
 #ifdef _DEBUG_
