@@ -128,7 +128,7 @@ String myCAMSaveToSDFile() {
   //Read JPEG data from FIFO
   while ( (temp !=0xD9) | (temp_last !=0xFF)){
     ++iCounter;
-    if ( iCounter % 100 == 0 ) {
+    if ( iCounter % 1000 == 0 ) {
       printf("%s:%d in loop. iCounter=%d. temp=0x%02x, temp_last=0x%02x\n", __FILE__, __LINE__, iCounter, temp, temp_last); 
     }
     temp_last = temp;
@@ -165,11 +165,12 @@ void setup(){
   uint8_t vid, pid;
   uint8_t temp = 0;
   Serial.begin(115200);
-  Bridge.begin();    // To communicate with the YUN
+  //Bridge.begin(115200);    // To communicate with the YUN
+  Bridge.begin();
   //Serial.begin(9600);
   //Console.begin();
   //while(!Console);   // wait for Serial port to connect.
-  Serial.print("Beginning");
+  Serial.println("Beginning");
   printf("%s:%d Serial.begin\n", __FILE__, __LINE__); 
   delay(5000);
   printf("%s:%d byte size=%d, char size=%d, int size=%d, long size=%d\n", __FILE__, __LINE__, sizeof(byte), sizeof(char), sizeof(int), sizeof(long)); 
@@ -254,9 +255,16 @@ void loop(){
   int iStatus;
   if ( cError[0] == '\0' ) {
     runCpuInfo();
+    testRun1();
+    testRun2();
+    testRun3();
+    testRun4();
+    testEcho();
+    testEcho2();
     String sImageFile = myCAMSaveToSDFile();
     if ( sImageFile.length() > 0 ) {
-      iStatus = sentImage(sImageFile);
+      //iStatus = sentImage(sImageFile);
+      iStatus = sentImage2(sImageFile);
       printf("%s:%d loop() iStatus=%d\n", __FILE__, __LINE__, iStatus);
       if ( iStatus != 0 ) {
         delay(5000000);
@@ -281,16 +289,25 @@ int sentImage(const String &sImage) {
   String sParam;
   printf("%s:%d Sending image %s to cloud\n", __FILE__, __LINE__, sImage.c_str());
 
-  sParam = "curl -v --insecure -XPUT -H 'X-Auth-Token: ";
+  sParam = "/usr/bin/curl --fail --stderr - -v --insecure -XPUT -H 'X-Auth-Token: ";
   sParam += _AUTHORIZATION_TOKEN_;
   sParam += "' --data-binary '@";
   sParam += sImage;
   sParam += "' '";
   sParam += _DRWATSON_ACCOUNT_URL;
   //sParam += "1.jpg' 2>&1";
-  sParam += "1.jpg' 2>&1 | tee /tmp/log/curl.txt";
+  sParam += "1.jpg' | tee /tmp/log/curl.txt";
   printf("%s:%d running shell command=\n%s\n", __FILE__, __LINE__, sParam.c_str());
+  printf("%s:%d Curl start\n", __FILE__, __LINE__);
+  delay( 1000 );
   drWatson.runShellCommand(sParam);
+  printf("%s:%d Curl end\n", __FILE__, __LINE__);
+
+  while( !drWatson.available() ) 
+  {
+    delay( 100 );
+  }
+  
   int iReturn = drWatson.exitValue();
   printf("%s:%d drwatson iReturn=%d=\n", __FILE__, __LINE__, iReturn);
 
@@ -325,11 +342,93 @@ int sentImage(const String &sImage) {
   return iReturn;
 }
 
+int sentImage2(const String &sImage) {
+  Process drWatson;
+  String sParam;
+  printf("%s:%d sentImage2 image %s to cloud\n", __FILE__, __LINE__, sImage.c_str());
+  int iCounter = 0;
+  drWatson.begin("curl");
+  drWatson.addParameter("--fail"); 
+  drWatson.addParameter("--stderr"); 
+  drWatson.addParameter("-"); 
+  drWatson.addParameter("-v"); 
+  drWatson.addParameter("--insecure"); 
+  drWatson.addParameter("-XPUT");
+  drWatson.addParameter("-H"); 
+  sParam = "'X-Auth-Token: ";
+  sParam += _AUTHORIZATION_TOKEN_;
+  sParam += "'";
+  drWatson.addParameter(sParam.c_str());
+  drWatson.addParameter("--data-binary");
+  sParam = "'@";
+  sParam += sImage;
+  sParam += "'";
+  drWatson.addParameter(sParam.c_str());
+  sParam = "'";
+  sParam = _DRWATSON_ACCOUNT_URL;
+  sParam += "1.jpg'";
+  drWatson.addParameter(sParam.c_str());
+  //drWatson.addParameter("2>&1");
+
+  printf("%s:%d Curl begin\n", __FILE__, __LINE__);
+  drWatson.run();
+  printf("%s:%d Curl end\n", __FILE__, __LINE__);
+
+  while( !drWatson.available() ) 
+  {
+    delay( 100 );
+    ++iCounter;
+    if ( iCounter > 100 ) {
+      break;
+    }
+  }
+  
+  int iReturn = drWatson.exitValue();
+  printf("%s:%d drwatson iReturn=%d, iCounter=%d\n", __FILE__, __LINE__, iReturn, iCounter);
+
+#ifdef _DEBUG_
+  delay(2000);
+  // read the output of the command
+  sParam = "";
+  int iInitAvail = 0;
+  iInitAvail = drWatson.available();
+  while(drWatson.available()>0) {
+    char c = drWatson.read();
+    sParam += c;
+  }
+  printf("%s:%d iInitAvail=%d. Results of curl call=\n\t%s\n", __FILE__, __LINE__, iInitAvail, sParam.c_str());
+#endif
+
+  iReturn = drWatson.exitValue();
+  printf("%s:%d drWatson.exitValue()=%d\n", __FILE__, __LINE__, iReturn);
+
+#ifdef _DEBUG_
+  delay(2000);
+  // read the output of the command
+  sParam = "";
+  iInitAvail = drWatson.available();
+  while(drWatson.available()>0) {
+    char c = drWatson.read();
+    sParam += c;
+  }
+  printf("%s:%d iInitAvail=%d, Results of curl call=\n\t%s\n", __FILE__, __LINE__, iInitAvail, sParam.c_str());
+#endif
+  
+  return iReturn;
+}
+
 String runCpuInfo() {
+  int iTotal=0;
   Process p;
   String sReturn("");
   p.begin("cat");       
   p.addParameter("/proc/cpuinfo"); 
+//  p.addParameter("|");
+//  p.addParameter("tee");
+  p.addParameter(">");
+  
+  p.addParameter("/tmp/log/cpuinfo.txt"); 
+  p.addParameter("2>&1"); 
   p.run();
   int iReturn = p.exitValue();
   
@@ -337,8 +436,99 @@ String runCpuInfo() {
     char c = p.read();
     sReturn += c;
   }
-  printf("%s:%d runCpuInfo iReturn=%d. Results call=\n\t%s\n", __FILE__, __LINE__, iReturn, sReturn.c_str());
+  printf("%s:%d runCpuInfo with redirect iReturn=%d. Results call=\n\t%s\n", __FILE__, __LINE__, iReturn, sReturn.c_str());
+  p.close();
   return sReturn;
+}
+
+void testRun1() {
+  String sRun;
+  String sReturn("");
+  //sRun = "cat /proc/cpuinfo";
+  //sRun = "curl --help | tee /tmp/log/curl.txt";
+  sRun = "curl --help";
+  Process p2;
+
+  printf("%s:%d Curl start\n", __FILE__, __LINE__);
+  p2.begin("curl");       
+  p2.addParameter("--help"); 
+  p2.run();
+  int iTotal = 0, iReturn = 0, iAvail = 0;
+  iReturn = p2.exitValue();
+  sReturn = "";
+  printf("%s:%d Curl end\n", __FILE__, __LINE__);
+  iAvail = p2.available();
+  printf("%s:%d iAvail=%d, iReturn=%d\n", __FILE__, __LINE__, iAvail, iReturn);
+  
+  while(p2.available()>0) {
+    ++iTotal;
+    char c = p2.read();
+    sReturn += c;
+  }
+  iAvail = p2.available();
+  p2.close();
+  printf("%s:%d testRun1 2 iReturn=%d. iTotal=%d, iAvail=%d. Results call=\n\t%s\n", __FILE__, __LINE__, iReturn, iTotal, iAvail, sReturn.c_str());
+  delay(1000);
+  iAvail = p2.available();
+  printf("%s:%d runCpuInfo 2 iAvail again=%d\n", __FILE__, __LINE__, iAvail);
+}
+
+void testRun2() {
+  String sRun("curl https://www.google.com");
+  String sReturn("");
+  Process p3;
+  p3.begin("curl");
+  p3.addParameter("http://www.arduino.cc/asciilogo.txt");
+  p3.run();
+  int iExit3 = p3.exitValue();
+  p3.close();
+  printf("%s:%d Done with iExit3=%d\n", __FILE__, __LINE__,iExit3);
+}
+
+void testRun3() {
+  String sRun("curl https://www.google.com");
+  Process p4;
+  p4.runShellCommand(sRun);
+  int iExit4 = p4.exitValue();
+  p4.close();
+  printf("%s:%d Done with iExit4=%d\n", __FILE__, __LINE__,iExit4);
+}
+
+void testRun4() {
+  String sRun("curl https://www.google.com");
+  Process p5;
+  p5.runShellCommand(sRun);
+  int iExit5 = p5.exitValue();
+  p5.close();
+
+  printf("%s:%d iExit5=%d\n", __FILE__, __LINE__,iExit5);
+}
+
+void testEcho() {
+  Process p6;
+  p6.begin("echo");
+  p6.addParameter("'http://www.arduino.cc/asciilogo.txt'");
+  p6.addParameter(">");
+  p6.addParameter("/mnt/sda1/echo.txt");
+  p6.run();
+  int iExit6 = p6.exitValue();
+  p6.close();
+
+  printf("%s:%d iExit6=%d\n", __FILE__, __LINE__,iExit6);
+}
+
+void testEcho2() {
+  Process p7;
+  p7.runShellCommand("echo 'erik' > /mnt/sda1/echo2.txt");
+  int iExit7 = p7.exitValue();
+  p7.close();
+  printf("%s:%d Testecho done with all processes. Sleeping. iExit7=%d\n", __FILE__, __LINE__,iExit7);
+  
+  delay(30000);
+}
+
+void serialEvent() {
+   printf("%s:%d serialEvent() fired\n", __FILE__, __LINE__);
 }
 
 // getTimeStamp function return a string with the time stamp
