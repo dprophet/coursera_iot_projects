@@ -22,7 +22,7 @@
 #include <Wire.h>
 #include <ArduCAM.h>
 #include <SPI.h>
-
+//#include <GSM.h>
 #include "memorysaver.h"
 #if !(defined ESP8266 )
 #error Please select the ArduCAM ESP8266 UNO board in the Tools/Board
@@ -38,7 +38,7 @@ const int CS = 16;
 
 // Motion sensor datasheet https://www.mpja.com/download/31227sc.pdf
 const int MOTION_PIN = D4;  // Defined in pins_arduino.h
-#define _USE_MOTION_ 1   // Change to a 0 if you dont want to use a motion sensor
+#define _USE_MOTION_ 0   // Change to a 0 if you dont want to use a motion sensor
 
 //you can change the value of wifiType to select Station or AP mode.
 //Default is AP mode.
@@ -51,11 +51,19 @@ const char *AP_ssid = "arducam_esp8266";
 const char *AP_password = "";
 
 //Station mode you should put your ssid and password
-const char *ssid = ""; // Put your SSID here
-const char *password = ""; // Put your PASSWORD here
+const char *ssid = "dlink-af"; // Put your SSID here
+const char *password = "1anitha23"; // Put your PASSWORD here
 
-/* OV2640_160x120 OV2640_176x144 OV2640_320x240 OV2640_352x288 OV2640_640x480 V2640_800x600 
-   OV2640_1024x768 OV2640_1280x1024 OV2640_1600x1200
+/* 
+#define OV2640_160x120    0 //160x120
+#define OV2640_176x144    1 //176x144
+#define OV2640_320x240    2 //320x240
+#define OV2640_352x288    3 //352x288
+#define OV2640_640x480    4 //640x480
+#define OV2640_800x600    5 //800x600
+#define OV2640_1024x768   6 //1024x768
+#define OV2640_1280x1024  7 //1280x1024
+#define OV2640_1600x1200  8 //1600x1200
 */
 int iCaptureSize = OV2640_1024x768;
 
@@ -91,7 +99,7 @@ class PirSensor {
       printf("%s:%d\n\tcalibrating sensor ", __FILE__, __LINE__);
       for(int i = 0; i < m_iCalibrateTime; i++){
         printf("%d ", i);
-        delay(1000);
+        delay(10000);
       }
       printf("\n");
       printf("%s:%d sensor calibration complete. ACTIVE\n", __FILE__, __LINE__);
