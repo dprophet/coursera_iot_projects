@@ -255,6 +255,9 @@ void loop(){
   int iStatus;
   if ( cError[0] == '\0' ) {
     runCpuInfo();
+    runPWD();
+    runENV();
+    runLS();
     testRun1();
     testRun2();
     testRun3();
@@ -263,8 +266,8 @@ void loop(){
     testEcho2();
     String sImageFile = myCAMSaveToSDFile();
     if ( sImageFile.length() > 0 ) {
-      //iStatus = sentImage(sImageFile);
-      iStatus = sentImage2(sImageFile);
+      iStatus = sentImage(sImageFile);
+      //iStatus = sentImage2(sImageFile);
       printf("%s:%d loop() iStatus=%d\n", __FILE__, __LINE__, iStatus);
       if ( iStatus != 0 ) {
         delay(5000000);
@@ -286,30 +289,36 @@ curl -v -XPUT \
 
 int sentImage(const String &sImage) {
   Process drWatson;
+  int iCounter = 0;
   String sParam;
   printf("%s:%d Sending image %s to cloud\n", __FILE__, __LINE__, sImage.c_str());
 
-  sParam = "/usr/bin/curl --fail --stderr - -v --insecure -XPUT -H 'X-Auth-Token: ";
+  sParam = "cd /; /usr/bin/curl -o curl_error.txt --fail --stderr - -v --insecure -XPUT -H 'X-Auth-Token: ";
   sParam += _AUTHORIZATION_TOKEN_;
   sParam += "' --data-binary '@";
   sParam += sImage;
   sParam += "' '";
   sParam += _DRWATSON_ACCOUNT_URL;
-  //sParam += "1.jpg' 2>&1";
-  sParam += "1.jpg' | tee /tmp/log/curl.txt";
+  //sParam += "1.jpg'";
+  sParam += "1.jpg' > /mnt/sda1/curl.txt 2>&1";
   printf("%s:%d running shell command=\n%s\n", __FILE__, __LINE__, sParam.c_str());
   printf("%s:%d Curl start\n", __FILE__, __LINE__);
   delay( 1000 );
   drWatson.runShellCommand(sParam);
-  printf("%s:%d Curl end\n", __FILE__, __LINE__);
+  printf("%s:%d Curl end. Next delay\n", __FILE__, __LINE__);
+  delay(2000);
 
   while( !drWatson.available() ) 
   {
     delay( 100 );
+    ++iCounter;
+    if ( iCounter > 100 ) {
+      break;
+    }
   }
   
   int iReturn = drWatson.exitValue();
-  printf("%s:%d drwatson iReturn=%d=\n", __FILE__, __LINE__, iReturn);
+  printf("%s:%d drwatson iReturn=%d. iCounter=%d=\n", __FILE__, __LINE__, iReturn, iCounter);
 
 #ifdef _DEBUG_
   delay(2000);
@@ -348,6 +357,8 @@ int sentImage2(const String &sImage) {
   printf("%s:%d sentImage2 image %s to cloud\n", __FILE__, __LINE__, sImage.c_str());
   int iCounter = 0;
   drWatson.begin("curl");
+  drWatson.addParameter("-o"); 
+  drWatson.addParameter("curl_error.txt"); 
   drWatson.addParameter("--fail"); 
   drWatson.addParameter("--stderr"); 
   drWatson.addParameter("-"); 
@@ -355,24 +366,23 @@ int sentImage2(const String &sImage) {
   drWatson.addParameter("--insecure"); 
   drWatson.addParameter("-XPUT");
   drWatson.addParameter("-H"); 
-  sParam = "'X-Auth-Token: ";
+  sParam = "X-Auth-Token: ";
   sParam += _AUTHORIZATION_TOKEN_;
-  sParam += "'";
   drWatson.addParameter(sParam.c_str());
   drWatson.addParameter("--data-binary");
   sParam = "'@";
   sParam += sImage;
   sParam += "'";
   drWatson.addParameter(sParam.c_str());
-  sParam = "'";
   sParam = _DRWATSON_ACCOUNT_URL;
-  sParam += "1.jpg'";
+  sParam += "1.jpg";
+  printf("%s:%d sentImage2 URL=%s\n", __FILE__, __LINE__, sParam.c_str()); 
   drWatson.addParameter(sParam.c_str());
   //drWatson.addParameter("2>&1");
 
-  printf("%s:%d Curl begin\n", __FILE__, __LINE__);
+  printf("%s:%d sentImage2 Curl begin\n", __FILE__, __LINE__);
   drWatson.run();
-  printf("%s:%d Curl end\n", __FILE__, __LINE__);
+  printf("%s:%d sentImage2 Curl end\n", __FILE__, __LINE__);
 
   while( !drWatson.available() ) 
   {
@@ -384,7 +394,7 @@ int sentImage2(const String &sImage) {
   }
   
   int iReturn = drWatson.exitValue();
-  printf("%s:%d drwatson iReturn=%d, iCounter=%d\n", __FILE__, __LINE__, iReturn, iCounter);
+  printf("%s:%d sentImage2 drwatson iReturn=%d, iCounter=%d\n", __FILE__, __LINE__, iReturn, iCounter);
 
 #ifdef _DEBUG_
   delay(2000);
@@ -423,12 +433,6 @@ String runCpuInfo() {
   String sReturn("");
   p.begin("cat");       
   p.addParameter("/proc/cpuinfo"); 
-//  p.addParameter("|");
-//  p.addParameter("tee");
-  p.addParameter(">");
-  
-  p.addParameter("/tmp/log/cpuinfo.txt"); 
-  p.addParameter("2>&1"); 
   p.run();
   int iReturn = p.exitValue();
   
@@ -437,6 +441,57 @@ String runCpuInfo() {
     sReturn += c;
   }
   printf("%s:%d runCpuInfo with redirect iReturn=%d. Results call=\n\t%s\n", __FILE__, __LINE__, iReturn, sReturn.c_str());
+  p.close();
+  return sReturn;
+}
+
+String runPWD() {
+  int iTotal=0;
+  Process p;
+  String sReturn("");
+  p.begin("pwd");       
+  p.run();
+  int iReturn = p.exitValue();
+  
+  while(p.available()>0) {
+    char c = p.read();
+    sReturn += c;
+  }
+  printf("%s:%d runPWD iReturn=%d. Results call=\n\t%s\n", __FILE__, __LINE__, iReturn, sReturn.c_str());
+  p.close();
+  return sReturn;
+}
+
+String runENV() {
+  int iTotal=0;
+  Process p;
+  String sReturn("");
+  p.begin("env");       
+  p.run();
+  int iReturn = p.exitValue();
+  
+  while(p.available()>0) {
+    char c = p.read();
+    sReturn += c;
+  }
+  printf("%s:%d runENV iReturn=%d. Results call=\n\t%s\n", __FILE__, __LINE__, iReturn, sReturn.c_str());
+  p.close();
+  return sReturn;
+}
+
+String runLS() {
+  int iTotal=0;
+  Process p;
+  String sCommand("cd /; ls");
+  String sReturn("");  
+  p.runShellCommand(sCommand);
+  int iReturn = p.exitValue();
+  
+  while(p.available()>0) {
+    char c = p.read();
+    sReturn += c;
+  }
+  printf("%s:%d runLS iReturn=%d. Results call=\n\t%s\n", __FILE__, __LINE__, iReturn, sReturn.c_str());
   p.close();
   return sReturn;
 }
