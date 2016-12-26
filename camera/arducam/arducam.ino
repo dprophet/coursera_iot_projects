@@ -71,7 +71,9 @@ char cError[100]={0};
 //  - root@linino:~# overlay-only -i
 //  - http://www.arduino.org/forums/linino-and-openwrt/expand-the-yun-disk-space-598
 //#define _CAMERA_ROOT_ "/overlay/DCIM/"
-#define _CAMERA_ROOT_ "/mnt/sda1/DCIM/"
+//#define _CAMERA_ROOT_ "/mnt/sda1/DCIM/"    // For the Seeeduino Cloud
+//#define _CAMERA_ROOT_ " /tmp/run/mountd/mmcblk0p1/"      // For the LinKit Smart 7688 Duo
+#define _CAMERA_ROOT_ "/DCIM/"                           // For the LinKit Smart 7688 Duo
 
 String myCAMSaveToSDFile() {
   String sFile(_CAMERA_ROOT_);
@@ -95,9 +97,11 @@ String myCAMSaveToSDFile() {
 
   printf("%s:%d Capture Done.\n", __FILE__, __LINE__); 
 
+/*
   String sTIme = getTimeStamp();
   printf("%s:%d Called getTimeStamp\n", __FILE__, __LINE__); 
   printf("%s:%d time=%s!\n", __FILE__, __LINE__, sTIme.c_str()); 
+*/
 
   // DELETE ME
   k = 0;
@@ -164,15 +168,19 @@ String myCAMSaveToSDFile() {
 void setup(){
   uint8_t vid, pid;
   uint8_t temp = 0;
-  Serial.begin(115200);
+  //Serial.begin(115200);
+//  Serial1.begin(57600);
   //Bridge.begin(115200);    // To communicate with the YUN
-  Bridge.begin();
-  //Serial.begin(9600);
+//  Bridge.begin();
+  Serial.begin(9600);
   //Console.begin();
   //while(!Console);   // wait for Serial port to connect.
   Serial.println("Beginning");
   printf("%s:%d Serial.begin\n", __FILE__, __LINE__); 
   delay(5000);
+  Serial.println("Beginning2");
+  delay(5000);
+  Serial.println("Beginning3");
   printf("%s:%d byte size=%d, char size=%d, int size=%d, long size=%d\n", __FILE__, __LINE__, sizeof(byte), sizeof(char), sizeof(int), sizeof(long)); 
   
 #if defined (OV2640_MINI_2MP)
@@ -254,6 +262,8 @@ void setup(){
 void loop(){
   int iStatus;
   if ( cError[0] == '\0' ) {
+    printf("%s:%d\n", __FILE__, __LINE__);
+/*
     runCpuInfo();
     runPWD();
     runENV();
@@ -264,6 +274,8 @@ void loop(){
     testRun4();
     testEcho();
     testEcho2();
+*/
+    printf("%s:%d\n", __FILE__, __LINE__); 
     String sImageFile = myCAMSaveToSDFile();
     if ( sImageFile.length() > 0 ) {
       iStatus = sentImage(sImageFile);

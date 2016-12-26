@@ -24,8 +24,6 @@
   #define myserialprintf(fmt, ...)
 #endif // _DEBUG_
 
-int serial_put_c(char, FILE*);
-
 void _myserialprintf(const char *, ...);
 
 

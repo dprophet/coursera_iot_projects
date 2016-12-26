@@ -13,7 +13,7 @@ static int serial_put_c(char c, FILE *fp)
 	Serial.write(c); 
 }
 
-static void _myserialprintf(const char *myformat, ...)
+void _myserialprintf(const char *myformat, ...)
 {
   FILE stdif;
   va_list ap;
