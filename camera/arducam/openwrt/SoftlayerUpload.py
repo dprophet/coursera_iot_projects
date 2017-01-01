@@ -44,28 +44,27 @@ class EmbedSensorDataInJPEG:
         self._filename = sInImage
         self.__addMetaData()
 
+    def DumpExifInfo(self, sInFile):
+        ret = {}
+        i = Image.open(sInFile)
+        info = i._getexif()
+        for tag, value in info.items():
+            decoded = TAGS.get(tag, tag)
+            ret[decoded] = value
+
+        print "Exif=" + ret
+        return ret
+
     def __addMetaData(self):
-        spath, sname = os.path.split(self._filename)
         sfile1, sextension = os.path.splitext(self._filename)
         sMetaFile = sfile1 + ".json"
         sNewFile = sfile1 + "_meta.jpg"
 
         if os.path.isfile(sMetaFile) and os.stat(sMetaFile).st_size > 0:
             exif_dict = piexif.load(self._filename)
-            exif_dict2 = piexif.load("/Users/erikanderson/Downloads/20160710_105923.jpg")
 
-            ret = {}
-            i = Image.open(sNewFile)
-            info = i._getexif()
-            for tag, value in info.items():
-                decoded = TAGS.get(tag, tag)
-                ret[decoded] = value
-
-            print ret
-
-            print exif_dict
             with open(sMetaFile) as data_file:
-                #data = json.load(data_file)
+                # Read the sensor data file and embed into the JPG
                 data = data_file.read()
                 sTime = datetime.datetime.utcnow().strftime("%Y:%m:%d %H:%M:%S")
 
@@ -73,22 +72,15 @@ class EmbedSensorDataInJPEG:
                 exif_dict['Exif'][piexif.ExifIFD.DateTimeOriginal] = sTime
                 exif_dict['Exif'][piexif.ExifIFD.DateTimeDigitized] = sTime
                 exif_dict['Exif'][piexif.ExifIFD.CameraOwnerName] = "Smart Bird House"
-                exif_dict['Exif'][piexif.ExifIFD.DeviceSettingDescription] = data
                 exif_dict['Exif'][piexif.ExifIFD.LensMake] = "ArduCAM"
                 exif_dict['Exif'][piexif.ExifIFD.MakerNote] = data
-                exif_dict['Exif'][piexif.ExifIFD.InteroperabilityTag] = data
-                #exif_dict['Exif'][piexif.ExifIFD.SensingMethod] = data
-                #exif_dict['Exif'][piexif.ExifIFD.SubjectArea] = "Birdhouse"
-                exif_dict['Exif'][piexif.ExifIFD.FileSource] = data
                 exif_bytes = piexif.dump(exif_dict)
 
                 im = Image.open(self._filename)
-                im.thumbnail((100, 100), Image.ANTIALIAS)
                 im.save(sNewFile, exif=exif_bytes)
 
-                exif_dict2 = piexif.load(sNewFile)
+                self.DumpExifInfo(sNewFile)
 
-                piexif.insert(exif_bytes, self._filename)
                 data_file.close()
 
 
