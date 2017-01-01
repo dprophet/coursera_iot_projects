@@ -60,9 +60,9 @@ const int CS4 = 7;
 */
 int iCaptureSize = OV2640_1024x768;
 
-static char cFileName[] = __FILE__;
+//static char cFileName[] = __FILE__;
 
-static char cFloat[20];  // Max float string size is 20
+char *cFloat = NULL;
 
 const int SPI_CS = 7;
 ArduCAM *myCAM = NULL;
@@ -100,7 +100,7 @@ bool myCAMSaveToSDFile() {
   myCAM->clear_fifo_flag();
   //Start capture
   myCAM->start_capture();
-  printf("%s:%d start Capture infinite while loop\n", cFileName, __LINE__);
+  printf("%d start Capture infinite while loop\n", __LINE__);
   while(!myCAM->get_bit(ARDUCHIP_TRIG , CAP_DONE_MASK));
 
   printf("Capture Done.\n"); 
@@ -120,7 +120,7 @@ bool myCAMSaveToSDFile() {
   File file = FileSystem.open((char *) buf, FILE_WRITE);
  
   if( !file ) {
-    sprintf(cError, "%s:%d open file failed. Filename: %s\n", cFileName, __LINE__, (char *) buf);
+    sprintf(cError, "%d open file failed. Filename: %s\n", __LINE__, (char *) buf);
     printf("%s", cError);
     return false;
   }
@@ -167,11 +167,12 @@ bool myCAMSaveToSDFile() {
 void setup() {
   uint8_t vid, pid;
   uint8_t temp = 0;
+  cFloat = new char[20];
   Serial.begin(115200);
 //  Serial1.begin(57600);
   //Bridge.begin();
   //Serial.begin(9600);
-  printf("%s:%d setup()\n", cFileName, __LINE__); 
+  //printf("%s:%d setup()\n", cFileName, __LINE__); 
   delay(3000);
   printf("Trying bridge\n");
   Bridge.begin();
@@ -184,7 +185,7 @@ void setup() {
 #endif  
   
   if (!FileSystem.begin()) {
-    sprintf(cError, "%s:%d FileSystem.begin Failed !", cFileName, __LINE__);
+    sprintf(cError, "%d FileSystem.begin Failed !", __LINE__);
     printf("%s", cError);
     return;
   }
@@ -204,7 +205,7 @@ void setup() {
   temp = myCAM->read_reg(ARDUCHIP_TEST1);
    
   if (temp != 0x55){
-    sprintf(cError, "%s:%d SPI1 interface Error!. temp=%d (0x%02x)\n", cFileName, __LINE__, temp, temp); 
+    sprintf(cError, "%d SPI1 interface Error!. temp=%d (0x%02x)\n", __LINE__, temp, temp); 
     printf("%s", cError);
     return;
   }
@@ -215,7 +216,7 @@ void setup() {
      myCAM->rdSensorReg8_8(OV2640_CHIPID_HIGH, &vid);
      myCAM->rdSensorReg8_8(OV2640_CHIPID_LOW, &pid);
      if ((vid != 0x26) || (pid != 0x42)) {
-       sprintf(cError, "%s:%d Can't find OV2640 module!. vid=0x%02x, pid=0x%02x\n", cFileName, __LINE__, vid, pid);
+       sprintf(cError, "%d Can't find OV2640 module!. vid=0x%02x, pid=0x%02x\n", __LINE__, vid, pid);
        printf("%s", cError);
        return;
      } else {
@@ -255,7 +256,7 @@ void loop() {
     dumpSensors("/overlay/DCIM/1.json");
 
     if ( myCAMSaveToSDFile() ) {
-      printf("%s:%d loop() capture success\n", cFileName, __LINE__, iStatus);
+      printf("loop() capture success\n");
       callBridge();
     }
   } else {
@@ -382,7 +383,7 @@ void dumpSensors(char *cJSONFileName) {
       cFloatData = ftoa(fTemp,2);
       printf("Altitude:  %sm\n", cFloatData); 
 #else
-      fTemp = mySensor->readFloatAltitudeMeters();
+      fTemp = mySensor->readFloatAltitudeFeet();
       cFloatData = ftoa(fTemp,2);
       printf("Altitude: %sft\n", cFloatData); 
 #endif
@@ -431,36 +432,49 @@ int intToStr(long x, char str[], int d)
     // add 0s at the beginning
     while (i < d)
         str[i++] = '0';
- 
+
     reverse(str, i);
     str[i] = '\0';
     return i;
 }
  
-// Low compiled size code to convert float to char array
+// Low compiled size code to convert float to char array. Smaller than dtostrf
 char *ftoa(float n, int afterpoint)
 {
+    char *cPt = cFloat;
     cFloat[0] = '\0';
+
+    bool bWasNeg = false;
+    if ( n < 0.0 ) {
+      bWasNeg = true;
+      n = n * -1.0;
+      cPt[0] = '-';
+      cPt++;
+    }
+    
     // Extract integer part
     long ipart = (long)n;
+    //printf("ipart=%ld\n", ipart);
  
     // Extract floating part
     float fpart = n - (float)ipart;
+    
  
     // convert integer part to string
-    int i = intToStr(ipart, cFloat, 0);
- 
+    int i = intToStr(ipart, cPt, 0);
+    //printf("cFloat=%s\n", cFloat);
+
     // check for display option after point
     if (afterpoint != 0)
     {
-        cFloat[i] = '.';  // add dot
+        cPt[i] = '.';  // add dot
  
         // Get the value of fraction part upto given no.
         // of points after dot. The third parameter is needed
         // to handle cases like 233.007
         fpart = fpart * pow(10, afterpoint);
  
-        intToStr((int)fpart, cFloat + i + 1, afterpoint);
+        intToStr((int)fpart, cPt + i + 1, afterpoint);
     }
     return cFloat;
 }
