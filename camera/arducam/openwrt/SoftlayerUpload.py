@@ -69,9 +69,9 @@ class EmbedSensorDataInJPEG:
                 exif_dict['Exif'][piexif.ExifIFD.MakerNote] = data
                 exif_bytes = piexif.dump(exif_dict)
 
-                piexif.insert(exif_bytes, sNewFile)
+                piexif.insert(exif_bytes, self._filename)
 
-                self.DumpExifInfo(sNewFile)
+                self.DumpExifInfo(self._filename)
 
                 data_file.close()
 
