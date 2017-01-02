@@ -106,7 +106,7 @@ class SoftlayerUpload:
         print "Request headers=" + str(res.request.headers)
 
         sResponse = res.text
-        if res.status_code != 401:
+        if res.status_code != 201:
             # Error in HTTP put. Throw error
             sError = "ERROR uploading image. url=" + sFullURL + "\n\tres.status_code=" + str(res.status_code) + \
                 "\n\tHTTP headers=" + str(res.request.headers) + "\n\tResponse=" + sResponse

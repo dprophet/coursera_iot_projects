@@ -75,30 +75,27 @@ class SoftlayerCredentials:
             self.__FetchCredentials()
 
     def __LoadFromJSONFile(self, sInFilePath='/overlay/etc/softlayer.json'):
-        try:
-            if os.path.isfile(sInFilePath) and os.stat(sInFilePath).st_size > 0:
-                with open(sInFilePath) as data_file:
-                    data = json.load(data_file)
-                    self._sUsername = data['username']
-                    self._sPassword = data['password']
-                    self._sProjectId = data['project_id']
-                    self._sCustomerName = data['customer_name']
+        if os.path.isfile(sInFilePath) and os.stat(sInFilePath).st_size > 0:
+            with open(sInFilePath) as data_file:
+                data = json.load(data_file)
+                self._sUsername = data['username']
+                self._sPassword = data['password']
+                self._sProjectId = data['project_id']
+                self._sCustomerName = data['customer_name']
 
-                    if data['subject_token']:
-                        self._sSubjectToken = data['subject_token']
-                    if data['expires_at']:
-                        self._sExpiresAt = data['expires_at']
-                    if data['admin_user']:
-                        self._sAdminUser = data['admin_user']
-                    if data['storage_url']:
-                        self._sStorageURL = data['storage_url']
-                    data_file.close()
-            else:
-                sError = "ERROR: You must configure the Softlayer config file" + sInFilePath
-                raise RuntimeError(sError)
+                if 'subject_token' in data:
+                    self._sSubjectToken = data['subject_token']
+                if 'expires_at' in data:
+                    self._sExpiresAt = data['expires_at']
+                if 'admin_user' in data:
+                    self._sAdminUser = data['admin_user']
+                if 'storage_url' in data:
+                    self._sStorageURL = data['storage_url']
+                data_file.close()
+        else:
+            sError = "ERROR: You must configure the Softlayer config file" + sInFilePath
+            raise RuntimeError(sError)
 
-        except IOError as err:
-            pass
 
     def __SaveToJSONFile(self, sInFilePath='/overlay/etc/softlayer.json'):
 
