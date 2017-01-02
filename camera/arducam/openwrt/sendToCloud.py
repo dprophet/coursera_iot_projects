@@ -71,7 +71,9 @@ if __name__ == "__main__":
         #oSoftlayerUpload.ListContainers()
         #oSoftlayerUpload.ListContainerContent()
 
-        oSoftlayerUpload.uploadImage("/overlay/DCIM/1.jpg")
+        sResult = oSoftlayerUpload.uploadImage("/overlay/DCIM/1.jpg")
+
+        print sResult
 
     except KeyboardInterrupt:
         sys.exit(0)

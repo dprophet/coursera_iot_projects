@@ -74,7 +74,7 @@ BME280 *mySensor = NULL;
 #define _METRIC_OR_IMPERIAL_ 1  // 1 for Celsius and meters. Anything else for Fahrenheit and Feet
 #define _SENSOR_SHOW_REGS_ 0   // May not have enough sketch space for this. 1 to turn on BME280 registry printing.
 
-const unsigned long nTimeDelay = 60000000;
+const unsigned long nTimeDelay = 300000;
 
 // Store the original root error for failure. We will print this over and over.
 char cError[100]={0};

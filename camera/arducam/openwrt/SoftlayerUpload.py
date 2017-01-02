@@ -115,7 +115,11 @@ class SoftlayerUpload:
 
         imageFile.close()
 
+        sResults = "SUCCESS: Uploaded " + filename1
+
         self._logger.debug("uploadImage response=" + sResponse)
+
+        return sResults
 
     def ListContainers(self):
         sFullURL = self._SoftCredentials.StorageURL()
