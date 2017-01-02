@@ -35,8 +35,6 @@ import urllib2
 import requests
 import ssl
 import piexif
-from PIL import Image
-from PIL.ExifTags import TAGS
 
 # Embed the sensor data into the JPEG images exif metadata section
 class EmbedSensorDataInJPEG:
@@ -46,14 +44,9 @@ class EmbedSensorDataInJPEG:
 
     def DumpExifInfo(self, sInFile):
         ret = {}
-        i = Image.open(sInFile)
-        info = i._getexif()
-        for tag, value in info.items():
-            decoded = TAGS.get(tag, tag)
-            ret[decoded] = value
-
-        print "Exif=" + ret
-        return ret
+        exif_dict = piexif.load(sInFile)
+        print "Exif=" + str(exif_dict)
+        return exif_dict
 
     def __addMetaData(self):
         sfile1, sextension = os.path.splitext(self._filename)
@@ -76,8 +69,7 @@ class EmbedSensorDataInJPEG:
                 exif_dict['Exif'][piexif.ExifIFD.MakerNote] = data
                 exif_bytes = piexif.dump(exif_dict)
 
-                im = Image.open(self._filename)
-                im.save(sNewFile, exif=exif_bytes)
+                piexif.insert(exif_bytes, sNewFile)
 
                 self.DumpExifInfo(sNewFile)
 

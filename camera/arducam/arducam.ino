@@ -487,7 +487,7 @@ void callBridge() {
   // date is a command line utility to get the date and the time 
   // in different formats depending on the additional parameter 
   python.begin("python");
-  python.addParameter("sendToCloud.py");   // parameters: D for the complete date mm/dd/yy
+  python.addParameter("openwrt/sendToCloud.py");   // parameters: D for the complete date mm/dd/yy
   python.run();   // run the command
   // read the output of the command
   while(python.available()>0) {
