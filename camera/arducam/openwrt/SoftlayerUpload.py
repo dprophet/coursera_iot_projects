@@ -36,6 +36,7 @@ import requests
 import ssl
 import piexif
 import json
+import traceback
 
 # Embed the sensor data into the JPEG images exif metadata section
 class EmbedSensorDataInJPEG:
@@ -59,8 +60,15 @@ class EmbedSensorDataInJPEG:
 
             with open(sMetaFile) as data_file:
                 # Read the sensor data file and embed into the JPG
-                data = data_file.read()
-                oDict = json.loads(data)
+                try:
+                    data = data_file.read()
+                    oDict = json.loads(data)
+                except Exception as e:
+                    # Its important to crash/shutdown here until all bugs are gone.
+                    sTrace = 'ERROR:' + traceback.format_exc()
+                    sError = "Error adding metadata file:" + sMetaFile +  "\n\tContents" + data + "\n\ttraceback=" + sTrace
+                    raise RuntimeError(sError)
+
                 oDate = datetime.datetime.utcnow()
                 sTime = oDate.strftime("%Y:%m:%d %H:%M:%S")
                 oDict['time_taken'] = oDate.isoformat()
