@@ -92,7 +92,7 @@ bool myCAMSaveToSDFile() {
   byte buf[256];
   static int i = 0;
   static int k = 0;
-  int iCounter = 0;
+  unsigned long lCounter = 0;
   uint8_t temp = 0,temp_last=0;
   //Flush the FIFO
   myCAM->flush_fifo();
@@ -131,9 +131,9 @@ bool myCAMSaveToSDFile() {
   temp=SPI.transfer(0x00);
   //Read JPEG data from FIFO
   while ( (temp !=0xD9) | (temp_last !=0xFF)){
-    ++iCounter;
-    if ( iCounter % 1000 == 0 ) {
-      printf("in loop. iCounter=%d. temp=0x%02x, temp_last=0x%02x\n", iCounter, temp, temp_last); 
+    ++lCounter;
+    if ( lCounter % 1000 == 0 ) {
+      printf("in loop. lCounter=%ld. temp=0x%02x, temp_last=0x%02x\n", lCounter, temp, temp_last); 
     }
     temp_last = temp;
     temp = SPI.transfer(0x00);
