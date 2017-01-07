@@ -35,6 +35,7 @@ import urllib2
 import requests
 import ssl
 import piexif
+import json
 
 # Embed the sensor data into the JPEG images exif metadata section
 class EmbedSensorDataInJPEG:
@@ -59,14 +60,18 @@ class EmbedSensorDataInJPEG:
             with open(sMetaFile) as data_file:
                 # Read the sensor data file and embed into the JPG
                 data = data_file.read()
-                sTime = datetime.datetime.utcnow().strftime("%Y:%m:%d %H:%M:%S")
+                oDict = json.loads(data)
+                oDate = datetime.datetime.utcnow()
+                sTime = oDate.strftime("%Y:%m:%d %H:%M:%S")
+                oDict['time_taken'] = oDate.isoformat()
+                sNewData = json.dumps(oDict)
 
-                exif_dict['Exif'][piexif.ExifIFD.UserComment] = data
+                exif_dict['Exif'][piexif.ExifIFD.UserComment] = sNewData
                 exif_dict['Exif'][piexif.ExifIFD.DateTimeOriginal] = sTime
                 exif_dict['Exif'][piexif.ExifIFD.DateTimeDigitized] = sTime
                 exif_dict['Exif'][piexif.ExifIFD.CameraOwnerName] = "Smart Bird House"
                 exif_dict['Exif'][piexif.ExifIFD.LensMake] = "ArduCAM"
-                exif_dict['Exif'][piexif.ExifIFD.MakerNote] = data
+                exif_dict['Exif'][piexif.ExifIFD.MakerNote] = sNewData
                 exif_bytes = piexif.dump(exif_dict)
 
                 piexif.insert(exif_bytes, self._filename)
@@ -75,6 +80,9 @@ class EmbedSensorDataInJPEG:
 
                 data_file.close()
 
+            with open(sMetaFile, "w") as data_file:
+                data_file.write(sNewData)
+                data_file.close()
 
 
 class SoftlayerUpload:

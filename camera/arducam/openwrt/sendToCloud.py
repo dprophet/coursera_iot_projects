@@ -1,16 +1,13 @@
 import os
-import time
 import sys
-import datetime
-import json
 import logging
-import urllib
 import urllib2
 import traceback
-import ssl
 
-import SoftlayerCredentials
-import SoftlayerUpload
+from SoftlayerCredentials import SoftlayerCredentials
+from SoftlayerUpload import SoftlayerUpload
+from CloudantCredentials import CloudantCredentials
+from CloudantUpload import CloudantUpload
 
 
 sLogFilePath = os.getcwd()  # Directory where you want this script to store the Cointerra log files in event of troubles
@@ -66,12 +63,16 @@ if __name__ == "__main__":
 
         logger.info('Starting up')
 
-        oSoftlayerCredentials = SoftlayerCredentials.SoftlayerCredentials(logger)
-        oSoftlayerUpload = SoftlayerUpload.SoftlayerUpload(logger,oSoftlayerCredentials)
+        oSoftlayerCredentials = SoftlayerCredentials(logger)
+        oSoftlayerUpload = SoftlayerUpload(logger,oSoftlayerCredentials)
         #oSoftlayerUpload.ListContainers()
         #oSoftlayerUpload.ListContainerContent()
 
         sResult = oSoftlayerUpload.uploadImage("/overlay/DCIM/1.jpg")
+
+        oCloudantCredentials = CloudantCredentials(logger)
+        oCloudantUpload = CloudantUpload(logger, oCloudantCredentials)
+        sResult = oCloudantUpload.uploadSensorData("/overlay/DCIM/1.json")
 
         print sResult
 

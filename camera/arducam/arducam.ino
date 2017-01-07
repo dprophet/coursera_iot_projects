@@ -74,7 +74,7 @@ BME280 *mySensor = NULL;
 #define _METRIC_OR_IMPERIAL_ 1  // 1 for Celsius and meters. Anything else for Fahrenheit and Feet
 #define _SENSOR_SHOW_REGS_ 0   // May not have enough sketch space for this. 1 to turn on BME280 registry printing.
 
-const unsigned long nTimeDelay = 300000;
+const unsigned long nTimeDelay = 3600000;  // 5 minutes=300000  1hr=3600000
 
 // Store the original root error for failure. We will print this over and over.
 char cError[100]={0};
@@ -487,7 +487,7 @@ void callBridge() {
   // date is a command line utility to get the date and the time 
   // in different formats depending on the additional parameter 
   python.begin("python");
-  python.addParameter("openwrt/sendToCloud.py");   // parameters: D for the complete date mm/dd/yy
+  python.addParameter("openwrt/sendToCloud.py");
   python.run();   // run the command
   // read the output of the command
   while(python.available()>0) {

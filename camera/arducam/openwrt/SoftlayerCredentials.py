@@ -123,14 +123,14 @@ class SoftlayerCredentials:
         data_file.write(json.dumps(output, sort_keys=False, indent=4))
         data_file.close()
 
-    def Username(self, sInUsername):
-        self._sUsername = sInUsername
+    def Username(self):
+        return self._sUsername
 
-    def Password(self, sInPassword):
-        self._sPassword = sInPassword
+    def Password(self):
+        return self._sPassword
 
-    def ProjectId(self, sInProjectId):
-        self._sProjectId = sInProjectId
+    def ProjectId(self):
+        return self._sProjectId
 
     def CustomerName(self):
         return self._sCustomerName
