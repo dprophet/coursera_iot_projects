@@ -67,7 +67,7 @@ class EmbedSensorDataInJPEG:
                     # Its important to crash/shutdown here until all bugs are gone.
                     sTrace = 'ERROR:' + traceback.format_exc()
                     sError = "Error adding metadata file:" + sMetaFile +  "\n\tContents" + data + "\n\ttraceback=" + sTrace + \
-                             "\n\t" + e.strerror
+                             "\n\t" + str(e)
                     raise RuntimeError(sError)
 
                 oDate = datetime.datetime.utcnow()
