@@ -41,15 +41,16 @@ from uuid import getnode as get_mac
 
 # Embed the sensor data into the JPEG images exif metadata section
 class EmbedSensorDataInJPEG:
-    def __init__(self, sInImage):
+    def __init__(self, oInLogger, sInImage, sInFullURL):
+        self._logger = oInLogger
         self._filename = sInImage
+        self._sFullURL = sInFullURL
         self.__addMetaData()
 
     def DumpExifInfo(self, sInFile):
         ret = {}
         exif_dict = piexif.load(sInFile)
-        print "Exif=" + str(exif_dict)
-        return exif_dict
+        self._logger.debug("DumpExifInfo: Exif=" + str(exif_dict))
 
     def __addMetaData(self):
         sfile1, sextension = os.path.splitext(self._filename)
@@ -77,7 +78,9 @@ class EmbedSensorDataInJPEG:
                 sTime = oDate.strftime("%Y:%m:%d %H:%M:%S")
                 oDict['time_taken'] = oDate.isoformat()
                 oDict['mac_address'] = my_mac
+                oDict['image_url'] = self._sFullURL
                 sNewData = json.dumps(oDict)
+                self._logger.debug("__addMetaData: Adding metadata:\n\t" + sNewData + ", to file:\n\t" + self._filename)
 
                 exif_dict['Exif'][piexif.ExifIFD.UserComment] = sNewData
                 exif_dict['Exif'][piexif.ExifIFD.DateTimeOriginal] = sTime
@@ -107,13 +110,13 @@ class SoftlayerUpload:
 
     def uploadImage(self, sInArducamImage):
 
-        EmbedSensorDataInJPEG(sInArducamImage)
-
-        sToken = self._SoftCredentials.SubjectToken()
         filename1 = datetime.datetime.utcnow().strftime("%Y%m%d_%H%M%S")
         filename1 = filename1 + ".jpg"
-
         sFullURL = self._SoftCredentials.StorageURL() + "/" + self._SoftCredentials.CustomerName() + "/" + filename1
+
+        EmbedSensorDataInJPEG(self._logger, sInArducamImage, sFullURL)
+
+        sToken = self._SoftCredentials.SubjectToken()
 
         self._logger.debug("uploadImage: Uploading image=" + sInArducamImage + ", to=" + sFullURL)
 
@@ -124,7 +127,7 @@ class SoftlayerUpload:
                             verify=False,  # Disable HTTPS certificate validation.
                             headers={'Content-Type': 'image/jpeg', 'X-Auth-Token': sToken })
 
-        print "Request headers=" + str(res.request.headers)
+        self._logger.debug("uploadImage: Request headers=" + str(res.request.headers))
 
         sResponse = res.text
         if res.status_code != 201:
