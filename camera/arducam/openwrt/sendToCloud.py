@@ -72,7 +72,7 @@ if __name__ == "__main__":
 
         oCloudantCredentials = CloudantCredentials(logger)
         oCloudantUpload = CloudantUpload(logger, oCloudantCredentials)
-        sResult = oCloudantUpload.uploadSensorData("/overlay/DCIM/1.json")
+        sResult = sResult + "\n" + oCloudantUpload.uploadSensorData("/overlay/DCIM/1.json")
 
         print sResult
 
