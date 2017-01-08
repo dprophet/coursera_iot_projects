@@ -185,7 +185,7 @@ class SoftlayerCredentials:
             self._logger.debug('Got response from Softlayer.com site.  sResponse=\n' +
                               json.dumps(decoded, sort_keys=True, indent=4)
                               + ', len=' + str(len(sResponse)))
-            self._logger.debug('response.info()=' + response.info())
+            self._logger.debug('response.info()=' + str(response.info()))
 
             for iCatalogItem in range(iCatalogLen):
                 rescat = decoded['token']['catalog'][iCatalogItem]
