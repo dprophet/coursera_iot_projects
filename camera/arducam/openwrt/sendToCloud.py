@@ -74,6 +74,7 @@ if __name__ == "__main__":
         oCloudantUpload = CloudantUpload(logger, oCloudantCredentials)
         sResult = sResult + "\n" + oCloudantUpload.uploadSensorData("/overlay/DCIM/1.json")
 
+        logger.debug(sResult)
         print sResult
 
     except KeyboardInterrupt:

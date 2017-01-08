@@ -165,7 +165,7 @@ class SoftlayerCredentials:
         oRequest.add_header('Content-Type', 'application/json')
         # sJsonData = json.dumps(self._sJsonRequestStructure)
         sJsonData = json.dumps(self._sJsonRequestStructure, sort_keys=True, indent=4)
-        print 'sJsonData=' + sJsonData
+        self._logger.debug("FetchCredentials: sJsonData=\n" + sJsonData)
         context = ssl._create_unverified_context()
         response = urllib2.urlopen(oRequest, sJsonData, self._timeout, context=context)
 
@@ -181,12 +181,11 @@ class SoftlayerCredentials:
                 raise RuntimeError("Something is wrong. Username='" + self._sUsername + "' != token:user:id='" \
                                    + decoded['token']['user']['id'] + "'")
             self._sAdminUser = decoded['token']['user']['name']
+
             self._logger.debug('Got response from Softlayer.com site.  sResponse=\n' +
                               json.dumps(decoded, sort_keys=True, indent=4)
                               + ', len=' + str(len(sResponse)))
-            self._logger.debug(response.info())
-            print 'Got response from Softlayer.com site.  sResponse=\n' + json.dumps(decoded, sort_keys=True, indent=4) \
-                  + ', len=' + str(len(sResponse))
+            self._logger.debug('response.info()=' + response.info())
 
             for iCatalogItem in range(iCatalogLen):
                 rescat = decoded['token']['catalog'][iCatalogItem]
@@ -236,9 +235,9 @@ class SoftlayerCredentials:
 
         DateTemp = self._dateExpiresAt + datetime.timedelta(hours=-1)
 
-        print 'DateTemp=' + DateTemp.isoformat()
-        print 'oNow=' + oNow.isoformat()
-        print 'dateExpiresAt=' + self._dateExpiresAt.isoformat()
+        self._logger.debug('DateTemp=' + DateTemp.isoformat())
+        self._logger.debug('oNow=' + oNow.isoformat())
+        self._logger.debug('dateExpiresAt=' + self._dateExpiresAt.isoformat())
 
         if oNow > DateTemp:
             return True
