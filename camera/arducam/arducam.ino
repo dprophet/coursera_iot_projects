@@ -71,7 +71,7 @@ BME280 *mySensor = NULL;
 #define _USE_BME280_ 1
 
 // The 2 below defines because our sketch code space is full
-#define _METRIC_OR_IMPERIAL_ 1  // 1 for Celsius and meters. Anything else for Fahrenheit and Feet
+#define _METRIC_OR_IMPERIAL_ 0  // 1 for Celsius and meters. Anything else for Fahrenheit and Feet
 #define _SENSOR_SHOW_REGS_ 0   // May not have enough sketch space for this. 1 to turn on BME280 registry printing.
 
 const unsigned long nTimeDelay = 3600000;  // 5 minutes=300000  1hr=3600000
