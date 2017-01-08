@@ -77,7 +77,9 @@ class EmbedSensorDataInJPEG:
                 oDate = datetime.datetime.utcnow()
                 sTime = oDate.strftime("%Y:%m:%d %H:%M:%S")
                 sTimeUTC = oDate.strftime('%Y-%m-%dT%H:%M:%SZ')  # Make a proper ISO 8601 datetime for Cloudant analysis
+                nIntTime = int(oDate.strftime('%Y%m%d%H%M%S'))
                 oDict['utc_time'] = sTimeUTC
+                oDict['utc_int_time'] = nIntTime
                 oDict['mac_address'] = my_mac
                 oDict['image_url'] = self._sFullURL
                 sNewData = json.dumps(oDict)
