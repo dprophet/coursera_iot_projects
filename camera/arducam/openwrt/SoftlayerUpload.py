@@ -41,10 +41,11 @@ from uuid import getnode as get_mac
 
 # Embed the sensor data into the JPEG images exif metadata section
 class EmbedSensorDataInJPEG:
-    def __init__(self, oInLogger, sInImage, sInFullURL):
+    def __init__(self, oInLogger, sInImage, sInFullURL, sInMAC):
         self._logger = oInLogger
         self._filename = sInImage
         self._sFullURL = sInFullURL
+        self._sMAC = sInMAC
         self.__addMetaData()
 
     def DumpExifInfo(self, sInFile):
@@ -72,15 +73,13 @@ class EmbedSensorDataInJPEG:
                              "\n\t" + str(e)
                     raise RuntimeError(sError)
 
-                mac = get_mac()
-                my_mac = ':'.join(("%012X" % mac)[i:i + 2] for i in range(0, 12, 2))
                 oDate = datetime.datetime.utcnow()
                 sTime = oDate.strftime("%Y:%m:%d %H:%M:%S")
                 sTimeUTC = oDate.strftime('%Y-%m-%dT%H:%M:%SZ')  # Make a proper ISO 8601 datetime for Cloudant analysis
                 nIntTime = int(oDate.strftime('%Y%m%d%H%M%S'))
                 oDict['utc_time'] = sTimeUTC
                 oDict['utc_int_time'] = nIntTime
-                oDict['mac_address'] = my_mac
+                oDict['mac_address'] = self._sMAC
                 oDict['image_url'] = self._sFullURL
                 sNewData = json.dumps(oDict)
                 self._logger.debug("__addMetaData: Adding metadata:\n\t" + sNewData + ", to file:\n\t" + self._filename)
@@ -113,11 +112,13 @@ class SoftlayerUpload:
 
     def uploadImage(self, sInArducamImage):
 
+        mac = get_mac()
+        my_mac = ''.join(("%012X" % mac)[i:i + 2] for i in range(0, 12, 2))
         filename1 = datetime.datetime.utcnow().strftime("%Y%m%d_%H%M%S")
-        filename1 = filename1 + ".jpg"
+        filename1 = filename1 + "-" + my_mac + ".jpg"
         sFullURL = self._SoftCredentials.StorageURL() + "/" + self._SoftCredentials.CustomerName() + "/" + filename1
 
-        EmbedSensorDataInJPEG(self._logger, sInArducamImage, sFullURL)
+        EmbedSensorDataInJPEG(self._logger, sInArducamImage, sFullURL, my_mac)
 
         sToken = self._SoftCredentials.SubjectToken()
 
