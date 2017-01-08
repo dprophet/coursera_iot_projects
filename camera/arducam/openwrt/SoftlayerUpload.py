@@ -37,6 +37,7 @@ import ssl
 import piexif
 import json
 import traceback
+from uuid import getnode as get_mac
 
 # Embed the sensor data into the JPEG images exif metadata section
 class EmbedSensorDataInJPEG:
@@ -70,9 +71,12 @@ class EmbedSensorDataInJPEG:
                              "\n\t" + str(e)
                     raise RuntimeError(sError)
 
+                mac = get_mac()
+                my_mac = ':'.join(("%012X" % mac)[i:i + 2] for i in range(0, 12, 2))
                 oDate = datetime.datetime.utcnow()
                 sTime = oDate.strftime("%Y:%m:%d %H:%M:%S")
                 oDict['time_taken'] = oDate.isoformat()
+                oDict['mac_address'] = my_mac
                 sNewData = json.dumps(oDict)
 
                 exif_dict['Exif'][piexif.ExifIFD.UserComment] = sNewData

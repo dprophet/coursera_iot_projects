@@ -352,7 +352,7 @@ void dumpSensors(char *cJSONFileName) {
       float fTemp = 0.0;
       File fSensorData = FileSystem.open(cJSONFileName, FILE_WRITE);
 
-      fSensorData.print("{units:");
+      fSensorData.print("{\"units\":");
       fSensorData.print(_METRIC_OR_IMPERIAL_);
       fSensorData.print(",");
       
@@ -366,7 +366,7 @@ void dumpSensors(char *cJSONFileName) {
       printf("Temperature: %s F\n", cFloatData);
 #endif
 
-      fSensorData.print("temperature:");
+      fSensorData.print("\"temperature\":");
       fSensorData.print(cFloatData);
       fSensorData.print(", ");
 
@@ -374,7 +374,7 @@ void dumpSensors(char *cJSONFileName) {
       cFloatData = ftoa(fTemp,2);
       printf("Pressure: %s Pa\n", cFloatData); 
 
-      fSensorData.print("pressure:");
+      fSensorData.print("\"pressure\":");
       fSensorData.print(cFloatData);
       fSensorData.print(", ");
 
@@ -388,7 +388,7 @@ void dumpSensors(char *cJSONFileName) {
       printf("Altitude: %sft\n", cFloatData); 
 #endif
 
-      fSensorData.print("altitude:");
+      fSensorData.print("\"altitude\":");
       fSensorData.print(cFloatData);
       fSensorData.print(", ");
 
@@ -396,7 +396,7 @@ void dumpSensors(char *cJSONFileName) {
       cFloatData = ftoa(fTemp,2);
       printf("RH: %s%%\n\n", cFloatData); 
 
-      fSensorData.print("rh:");
+      fSensorData.print("\"rh\":");
       fSensorData.print(cFloatData);
       fSensorData.print("}\n");
       fSensorData.close();
