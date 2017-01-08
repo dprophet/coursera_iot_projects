@@ -79,7 +79,7 @@ const unsigned long nTimeDelay = 3600000;  // 5 minutes=300000  1hr=3600000
 // Store the original root error for failure. We will print this over and over.
 char cError[100]={0};
 
-// Location is overlay because I did expanded the YUM dick space with an SD overlay
+// Location is overlay because I did expanded the YUM disk space with an SD overlay
 //  - root@linino:~# overlay-only -i
 //  - http://www.arduino.org/forums/linino-and-openwrt/expand-the-yun-disk-space-598
 //#define _CAMERA_ROOT_ "/overlay/DCIM/"
