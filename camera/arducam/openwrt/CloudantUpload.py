@@ -61,7 +61,7 @@ class CloudantUpload:
                             verify=False,  # Disable HTTPS certificate validation.
                             headers={'Content-Type': 'application/json'})
 
-        print "Request headers=" + str(res.request.headers)
+        self._logger.debug("uploadSensorData: Request headers=" + str(res.request.headers))
 
         sResponse = res.text
         if res.status_code != 201:
