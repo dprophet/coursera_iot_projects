@@ -53,24 +53,34 @@ def myCommandCallback(cmd):
     if cmd.command == "display":
         command = cmd.data['screen']
         if command == "on":
-            # TODO insert your code here
+            plane=getPixelMap("red",sense.get_temperature())
             pass
         elif command == "off":
             # TODO insert your code here
+            plane=getPixelMap("green",sense.get_temperature())
             pass
+        sense.set_pixels(plane)
+
+myOrd = "0qurdm"
+myGateWayType = "myraspberrypigateway"
+myGatewayID = "mypigateway"
+myAuthToken = "Fill in token from my notes"
+
+myDeviceType = "mysensehatpi"
+myDeviceID = "senmypigateway"
 
 try:
-    gatewayOptions = {"org": "yourOrg", "type": "yourGatewayType", "id": "yourGatewayId", "auth-method": "token", "auth-token": "yourAuthToken"}
+    gatewayOptions = {"org": myOrd, "type": myGateWayType, "id": myGatewayID, "auth-method": "token", "auth-token": myAuthToken}
     gatewayCli = ibmiotf.gateway.Client(gatewayOptions)
 
     gatewayCli.connect()
     gatewayCli.deviceCommandCallback = myCommandCallback 
-    gatewayCli.subscribeToDeviceCommands(deviceType='yourDeviceType', deviceId='yourDeviceId', command='display',format='json',qos=2)
+    gatewayCli.subscribeToDeviceCommands(deviceType=myDeviceType, deviceId=myDeviceID, command='display',format='json',qos=2)
 
     while True:
-        temp = 0 # TODO insert your code here
-        myData = {} # TODO insert your code here
-        gatewayCli.publishDeviceEvent("yourDeviceType", "yourDeviceId", "yourEventName", "json", myData, qos=1 )
+        temp = sense.get_temperature()  # TODO insert your code here
+        myData = {'d':{'temperature':temp}} # TODO insert your code here
+        gatewayCli.publishDeviceEvent(myDeviceType, myDeviceID, "yourEventName", "json", myData, qos=1 )
         time.sleep(2)
 
 except ibmiotf.ConnectionException  as e:
