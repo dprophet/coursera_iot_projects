@@ -9,6 +9,7 @@
   "author": "Erik Anderson",
   "license": "ISC",
   "dependencies": {
-    "express": "^4.14.1"
+    "express": "^4.14.1",
+    "ibmiotf": "^0.2.30"
   }
 }
